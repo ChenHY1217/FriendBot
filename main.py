@@ -3,6 +3,11 @@ from dotenv import load_dotenv
 import os
 import openai
 import json
+from prompts import IntentPrompt, ResponsePrompt # Importing the prompts from prompts.py
+
+# Can change temperature to reduce randomness in output from GPT-4o-mini
+
+
 
 # Function to clean up noisy user input using GPT-4o-mini
 def cleanInput(noisyInput, client):
@@ -31,6 +36,51 @@ def cleanInput(noisyInput, client):
     except json.JSONDecodeError:
         # Fallback if response isn't valid JSON
         return "Error: Unable to parse response."
+    
+# Function to extract intent from user input using GPT-4o-mini
+def extractIntent(input, client):
+    
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": IntentPrompt},
+            {
+                "role": "user",
+                "content": input,
+            }
+        ],
+    )
+
+    try:
+        responseObject = json.loads(completion.choices[0].message.content)
+        return responseObject
+    except json.JSONDecodeError:
+        # Fallback if response isn't valid JSON
+        return "Error: Unable to parse response."
+    
+# Function to generate a response using GPT-4o model
+def generateResponse(input, emotions, intent, client):
+
+    finalInput = f"User Input: {input}\nEmotions: {emotions}\nIntent: {intent}"
+
+    completion = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": ResponsePrompt},
+            {
+                "role": "user",
+                "content": finalInput,
+            }
+        ],
+    )
+
+    try:
+        responseObject = completion.choices[0].message.content
+        return responseObject
+    except json.JSONDecodeError:
+        # Fallback if response isn't valid JSON
+        return "Error: Unable to parse response."
+
 
 if __name__ == "__main__":
 
@@ -44,6 +94,7 @@ if __name__ == "__main__":
     cleanedInput = cleanInput(noisyInput, client)
 
     print("Cleaned Input: ", cleanedInput) # TESTING PURPOSES ONLY
+    print("") # TESTING PURPOSES ONLY
 
     # Layer 1 - Extracting Emotions using Pre-trained BERT model (trained on GoEmotions dataset)
 
@@ -51,9 +102,19 @@ if __name__ == "__main__":
 
 
 
-    # Layer 2 - Extracting Intent using OpenAI 
+    # Layer 2 - Extracting Intent using OpenAI 4o-mini model
+    extractedIntent = extractIntent(cleanedInput, client)
 
+    print("Intent Response: ", extractedIntent) # TESTING PURPOSES ONLY
+    print("type fo response of intent prompt: ", type(extractedIntent)) # TESTING PURPOSES ONLY
+    print("") # TESTING PURPOSES ONLY
 
+    # Layer 3 - Generating Response using OpenAI 4o model
+    response = generateResponse(cleanedInput, extractedEmotions, extractedIntent, client)
+
+    print("Response: ", response) # TESTING PURPOSES ONLY
+    print("type of response: ", type(response)) # TESTING PURPOSES ONLY
+    print("") # TESTING PURPOSES ONLY
 
 
 
