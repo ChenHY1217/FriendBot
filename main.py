@@ -3,6 +3,8 @@ from dotenv import load_dotenv
 import os
 import openai
 import json
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+import torch
 from prompts import IntentPrompt, ResponsePrompt # Importing the prompts from prompts.py
 
 # Can change temperature to reduce randomness in output from GPT-4o-mini
@@ -61,7 +63,7 @@ def extractIntent(input, client):
 # Function to generate a response using GPT-4o model
 def generateResponse(input, emotions, intent, client):
 
-    finalInput = f"User Input: {input}\nEmotions: {emotions}\nIntent: {intent}"
+    finalInput = f"User Input: {input}\nEmotions: {json.dumps(emotions)}\nIntent: {intent}"
 
     completion = client.chat.completions.create(
         model="gpt-4o",
@@ -98,9 +100,44 @@ if __name__ == "__main__":
 
     # Layer 1 - Extracting Emotions using Pre-trained BERT model (trained on GoEmotions dataset)
 
+    # Testing different existing pre-trained models from HuggingFace
 
+    # codewithdark/bert-GoEmotions
+    # Load model and tokenizer
+    model_name = "codewithdark/bert-Gomotions"
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForSequenceClassification.from_pretrained(model_name)
 
+    # Emotion labels (adjust based on your dataset)
+    emotion_labels = [
+        "Admiration", "Amusement", "Anger", "Annoyance", "Approval", "Caring", "Confusion",
+        "Curiosity", "Desire", "Disappointment", "Disapproval", "Disgust", "Embarrassment",
+        "Excitement", "Fear", "Gratitude", "Grief", "Joy", "Love", "Nervousness", "Optimism",
+        "Pride", "Realization", "Relief", "Remorse", "Sadness", "Surprise", "Neutral"
+    ]
 
+    # Example text
+    text = cleanedInput
+    inputs = tokenizer(text, return_tensors="pt")
+
+    # Predict
+    with torch.no_grad():
+        outputs = model(**inputs)
+        probs = torch.sigmoid(outputs.logits).squeeze(0)  # Convert logits to probabilities
+
+    # Get top 5 predictions
+    top5_indices = torch.argsort(probs, descending=True)[:5]  # Get indices of top 5 labels
+    top5_labels = [emotion_labels[i] for i in top5_indices]
+    top5_probs = [probs[i].item() for i in top5_indices]
+
+    # Print results
+    print("Top 5 Predicted Emotions:")
+    extractedEmotions = {}
+    for label, prob in zip(top5_labels, top5_probs):
+        extractedEmotions[label] = prob
+        print(f"{label}: {prob:.4f}")
+
+    print("") # TESTING PURPOSES ONLY
 
     # Layer 2 - Extracting Intent using OpenAI 4o-mini model
     extractedIntent = extractIntent(cleanedInput, client)
