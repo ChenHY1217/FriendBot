@@ -9,6 +9,11 @@ from prompts import IntentPrompt, ResponsePrompt # Importing the prompts from pr
 
 # Can change temperature to reduce randomness in output from GPT-4o-mini
 
+###################################################################################################
+# This is the test code for FriendBot IVA Project. It is responsible for benchmarking             
+# the performance of the 3-layer architecutre for emotional intelligence in responses.
+# We will compare the performance of the 3-layer architecture with just a generic LLM like GPT-4o.
+###################################################################################################
 
 
 # Function to clean up noisy user input using GPT-4o-mini
@@ -43,7 +48,7 @@ def cleanInput(noisyInput, client):
 def extractIntent(input, client):
     
     completion = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="gpt-4o",
         messages=[
             {"role": "system", "content": IntentPrompt},
             {
@@ -82,7 +87,6 @@ def generateResponse(input, emotions, intent, client):
     except json.JSONDecodeError:
         # Fallback if response isn't valid JSON
         return "Error: Unable to parse response."
-
 
 if __name__ == "__main__":
 
@@ -169,6 +173,30 @@ if __name__ == "__main__":
     print("Response: ", response) # TESTING PURPOSES ONLY
     print("type of response: ", type(response)) # TESTING PURPOSES ONLY
     print("") # TESTING PURPOSES ONLY
+
+
+    ################################################################################
+    # Benchmarking / Evaluating the performance of the 3-layer architecture
+    ################################################################################
+
+    # For benchmarking, we can compare the performance of the 3-layer architecture with just a generic LLM like GPT-4o.
+
+    baseResponseObject = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": "You are a friend that can give relationship advice."},
+            {
+                "role": "user",
+                "content": cleanedInput,
+            }
+        ],
+    )
+
+    baseResponse = baseResponseObject.choices[0].message.content
+    print("Base Response: ", baseResponse) # TESTING PURPOSES ONLY
+
+    modelResponse = response
+    print("Model Response: ", modelResponse) # TESTING PURPOSES ONLY
 
 
 
