@@ -87,6 +87,8 @@ Example output:
   }
 }
 
+Make sure the returned string is parsable JSON. This means json.loads in python can parse it. If you encounter any issues, return an error message indicating the problem.
+
 """
 
 ResponsePrompt = """

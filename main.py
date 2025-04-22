@@ -51,7 +51,7 @@ def extract_intent(input, conversation_history, client):
     completion = client.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {"role": "system", "content": IntentPrompt},
+            {"role": "system", "content": system_prompt},
             {
                 "role": "user",
                 "content": input,
@@ -69,7 +69,7 @@ def extract_intent(input, conversation_history, client):
 # Function to generate a response using GPT-4o model
 def generate_response(input, emotions, intent, conversation_history, client):
 
-    finalInput = f"User Input: {input}\nEmotions: {json.dumps(emotions)}\nIntent: {intent}"
+    finalInput = f"User Input: {input}\nEmotions: {json.dumps(emotions)}\nIntent: {intent} \nPast conversation history: {conversation_history}"
 
     completion = client.chat.completions.create(
         model="gpt-4o",
@@ -96,10 +96,10 @@ if __name__ == "__main__":
     client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
     conversation_history = []  # Initialize conversation history
+    conversation_history_base = []  # Initialize conversation history for base response
 
     intro = """
     Welcome to FriendBot! I am here to help you with your relationship concerns. I will analyze your input and provide you with insights and advice, or just be a listening ear. Think of me as a friend you can vent to and Let's get started!
-
     """
     print(intro)  # Print the introduction message
     print("")  # TESTING PURPOSES ONLY
@@ -113,51 +113,56 @@ if __name__ == "__main__":
     while True:
 
         noisyInput = input("User: ")  # Get user input
-        cleanedInput = cleanInput(noisyInput, client)
+        cleanedInput = clean_input(noisyInput, client)
 
         print("Cleaned Input: ", cleanedInput) # TESTING PURPOSES ONLY
         conversation_history.append(f"User: {cleanedInput}")  # Append cleaned input to conversation history
+        conversation_history_base.append(f"User: {cleanedInput}")  # Append cleaned input to base conversation history
 
         ########################################################################################################
         # Layer 1 - Extracting Emotions using Pre-trained BERT model (trained on GoEmotions dataset)
         ########################################################################################################
 
-        # Testing different existing pre-trained models from HuggingFace
-        # codewithdark/bert-GoEmotions
-        # Load model and tokenizer
-        model_name = "codewithdark/bert-Gomotions"
+        # bhadresh-savani/bert-base-go-emotion
+        # Load the model and tokenizer directly for more control over outputs
+        model_name = "bhadresh-savani/bert-base-go-emotion"
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         model = AutoModelForSequenceClassification.from_pretrained(model_name)
-
-        # Emotion labels (adjust based on your dataset)
-        emotion_labels = [
-            "Admiration", "Amusement", "Anger", "Annoyance", "Approval", "Caring", "Confusion",
-            "Curiosity", "Desire", "Disappointment", "Disapproval", "Disgust", "Embarrassment",
-            "Excitement", "Fear", "Gratitude", "Grief", "Joy", "Love", "Nervousness", "Optimism",
-            "Pride", "Realization", "Relief", "Remorse", "Sadness", "Surprise", "Neutral"
-        ]
-
-        # Example text
+        
+        # Define the emotion labels for this model
+        emotion_labels = ['admiration', 'amusement', 'anger', 'annoyance', 'approval', 'caring', 
+                        'confusion', 'curiosity', 'desire', 'disappointment', 'disapproval', 
+                        'disgust', 'embarrassment', 'excitement', 'fear', 'gratitude', 'grief', 
+                        'joy', 'love', 'nervousness', 'optimism', 'pride', 'realization', 
+                        'relief', 'remorse', 'sadness', 'surprise', 'neutral']
+        
+        # Process the input text
         text = cleanedInput
-        inputs = tokenizer(text, return_tensors="pt")
-
-        # Predict
+        inputs = tokenizer(text, return_tensors="pt", truncation=True, padding=True)
+        
+        # Get model predictions
         with torch.no_grad():
             outputs = model(**inputs)
-            probs = torch.sigmoid(outputs.logits).squeeze(0)  # Convert logits to probabilities
-
-        # Get top 5 predictions
-        top5_indices = torch.argsort(probs, descending=True)[:5]  # Get indices of top 5 labels
-        top5_labels = [emotion_labels[i] for i in top5_indices]
-        top5_probs = [probs[i].item() for i in top5_indices]
-
-        # Print results
-        print("Top 5 Predicted Emotions:")
+            logits = outputs.logits.squeeze()
+            
+        # Convert logits to probabilities using softmax
+        probabilities = torch.nn.functional.softmax(logits, dim=0)
+        
+        # Get top 5 emotions and their probabilities
+        top_k = 5
+        top_probs, top_indices = torch.topk(probabilities, top_k)
+        
+        # Create dictionary with top emotions and their scores
         extractedEmotions = {}
-        for label, prob in zip(top5_labels, top5_probs):
-            extractedEmotions[label] = prob
-            print(f"{label}: {prob:.4f}")
-
+        for i in range(top_k):
+            emotion = emotion_labels[top_indices[i]]
+            score = top_probs[i].item()
+            extractedEmotions[emotion] = score
+        
+        print("Top 5 Predicted Emotions:")
+        for emotion, score in extractedEmotions.items():
+            print(f"{emotion}: {score:.4f}")
+        
         print("") # TESTING PURPOSES ONLY
 
         ########################################################################################################
@@ -175,13 +180,28 @@ if __name__ == "__main__":
         ########################################################################################################
 
         response = generate_response(cleanedInput, extractedEmotions, extractedIntent, conversation_history, client)
+        baseResponse = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "You are a friend that is experienced in dating. The Question is coming from someone seeking advice. Give a response to each question."},
+                {
+                    "role": "user",
+                    "content": cleanedInput,
+                }
+            ],
+        ).choices[0].message.content
 
         print("Response: ", response) # TESTING PURPOSES ONLY
         print("type of response: ", type(response)) # TESTING PURPOSES ONLY
         print("") # TESTING PURPOSES ONLY
 
         conversation_history.append(f"FriendBot: {response}")  # Append response to conversation history
+        conversation_history_base.append(f"GPT 4o: {baseResponse}")
+
+        print("----------------------------------------------------------------")  # TESTING PURPOSES ONLY
+        print("GPT 4o: ", baseResponse)  # Print the response from the model
+        print("")
+        print("FriendBot: ", response)  # Print the response from the model
 
 
-
-
+        

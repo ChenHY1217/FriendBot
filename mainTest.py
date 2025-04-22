@@ -3,7 +3,7 @@ import json
 import os
 from dotenv import load_dotenv
 import openai
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
 import torch
 import pandas as pd
 from sklearn.metrics import accuracy_score
@@ -57,62 +57,45 @@ def clean_input(noisy_input, openai_client):
         return "Error: Unable to parse response."
     
 # Function to extract intent from user input using GPT-4o-mini
-def extract_intent(user_input, openai_client):
-    """
-    Extracts the intent, emotional undertone, and relationship dynamics from the user's message 
-    using GPT-based intent classification.
-    
-    Args:
-        user_input (str): Cleaned input from the user.
-        conversation_history (list): List of previous conversation turns for context.
-        client (openai.Client): OpenAI client instance.
-    
-    Returns:
-        dict: Structured JSON containing intent, emotions, dynamics, urgency level, and therapeutic approaches.
+def extractIntent(input, conversation_history, client):
+
+    system_prompt = f"""
+    {IntentPrompt}
+
+    Past conversation history: {conversation_history}
     """
     
-    completion = openai_client.chat.completions.create(
+    completion = client.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {"role": "system", "content": IntentPrompt},
+            {"role": "system", "content": system_prompt},
             {
                 "role": "user",
-                "content": user_input,
+                "content": input,
             }
         ],
     )
 
     try:
-        response_object = json.loads(completion.choices[0].message.content)
+        response_text = completion.choices[0].message.content
+        response_object = json.loads(response_text)
         return response_object
     except json.JSONDecodeError:
         # Fallback if response isn't valid JSON
         return "Error: Unable to parse response."
     
 # Function to generate a response using GPT-4o model
-def generate_response(user_input, emotions, intent, openai_client):
-    """
-    Generates an emotionally intelligent and contextually relevant response for the user's message 
-    based on extracted emotions and intent.
-    
-    Args:
-        user_input (str): User's cleaned input.
-        emotions (dict): Extracted emotions from the user's input.
-        intent (dict): Extracted intent details.
-        client (openai.Client): OpenAI client instance.
-    
-    Returns:
-        str: Generated FriendBot response.
-    """
-    final_input = f"User Input: {user_input}\nEmotions: {json.dumps(emotions)}\nIntent: {intent}"
+def generateResponse(input, emotions, intent, conversation_history, client):
 
-    completion = openai_client.chat.completions.create(
+    finalInput = f"User Input: {input}\nEmotions: {json.dumps(emotions)}\nIntent: {intent} \nPast conversation history: {conversation_history}"
+
+    completion = client.chat.completions.create(
         model="gpt-4o",
         messages=[
             {"role": "system", "content": ResponsePrompt},
             {
                 "role": "user",
-                "content": final_input,
+                "content": finalInput,
             }
         ],
     )
@@ -148,6 +131,7 @@ if __name__ == "__main__":
     cleanedInput = clean_input(NOISY_INPUT, client)
 
     print("Cleaned Input: ", cleanedInput) # TESTING PURPOSES ONLY
+    conversation_history.append(f"User: {cleanedInput}")  # Append cleaned input to conversation history
 
     ########################################################################################################
     # Layer 1 - Extracting Emotions using Pre-trained BERT model (trained on GoEmotions dataset)
@@ -156,56 +140,100 @@ if __name__ == "__main__":
     # Testing different existing pre-trained models from HuggingFace
     # codewithdark/bert-GoEmotions
     # Load model and tokenizer
-    MODEL_NAME = "codewithdark/bert-Gomotions"
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-    model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME)
+    # MODEL_NAME = "codewithdark/bert-Gomotions"
+    # tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+    # model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME)
 
-    # Emotion labels (adjust based on your dataset)
-    emotion_labels = [
-        "Admiration", "Amusement", "Anger", "Annoyance", "Approval", "Caring", "Confusion",
-        "Curiosity", "Desire", "Disappointment", "Disapproval", "Disgust", "Embarrassment",
-        "Excitement", "Fear", "Gratitude", "Grief", "Joy", "Love", "Nervousness", "Optimism",
-        "Pride", "Realization", "Relief", "Remorse", "Sadness", "Surprise", "Neutral"
-    ]
+    # # Emotion labels (adjust based on your dataset)
+    # emotion_labels = [
+    #     "Admiration", "Amusement", "Anger", "Annoyance", "Approval", "Caring", "Confusion",
+    #     "Curiosity", "Desire", "Disappointment", "Disapproval", "Disgust", "Embarrassment",
+    #     "Excitement", "Fear", "Gratitude", "Grief", "Joy", "Love", "Nervousness", "Optimism",
+    #     "Pride", "Realization", "Relief", "Remorse", "Sadness", "Surprise", "Neutral"
+    # ]
 
-    # Example text
+    # # Example text
+    # text = cleanedInput
+    # inputs = tokenizer(text, return_tensors="pt")
+
+    # # Predict
+    # with torch.no_grad():
+    #     outputs = model(**inputs)
+    #     probs = torch.sigmoid(outputs.logits).squeeze(0)  # Convert logits to probabilities
+
+    # # Get top 5 predictions
+    # top5_indices = torch.argsort(probs, descending=True)[:5]  # Get indices of top 5 labels
+    # top5_labels = [emotion_labels[i] for i in top5_indices]
+    # top5_probs = [probs[i].item() for i in top5_indices]
+
+    # # Print results
+    # print("Top 5 Predicted Emotions:")
+    # extractedEmotions = {}
+    # for label, prob in zip(top5_labels, top5_probs):
+    #     extractedEmotions[label] = prob
+    #     print(f"{label}: {prob:.4f}")
+
+    # print("") # TESTING PURPOSES ONLY
+
+    # bhadresh-savani/bert-base-go-emotion
+    # Load the model and tokenizer directly for more control over outputs
+    model_name = "bhadresh-savani/bert-base-go-emotion"
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForSequenceClassification.from_pretrained(model_name)
+    
+    # Define the emotion labels for this model
+    emotion_labels = ['admiration', 'amusement', 'anger', 'annoyance', 'approval', 'caring', 
+                     'confusion', 'curiosity', 'desire', 'disappointment', 'disapproval', 
+                     'disgust', 'embarrassment', 'excitement', 'fear', 'gratitude', 'grief', 
+                     'joy', 'love', 'nervousness', 'optimism', 'pride', 'realization', 
+                     'relief', 'remorse', 'sadness', 'surprise', 'neutral']
+    
+    # Process the input text
     text = cleanedInput
-    inputs = tokenizer(text, return_tensors="pt")
-
-    # Predict
+    inputs = tokenizer(text, return_tensors="pt", truncation=True, padding=True)
+    
+    # Get model predictions
     with torch.no_grad():
         outputs = model(**inputs)
-        probs = torch.sigmoid(outputs.logits).squeeze(0)  # Convert logits to probabilities
-
-    # Get top 5 predictions
-    top5_indices = torch.argsort(probs, descending=True)[:5]  # Get indices of top 5 labels
-    top5_labels = [emotion_labels[i] for i in top5_indices]
-    top5_probs = [probs[i].item() for i in top5_indices]
-
-    # Print results
-    print("Top 5 Predicted Emotions:")
+        logits = outputs.logits.squeeze()
+        
+    # Convert logits to probabilities using softmax
+    probabilities = torch.nn.functional.softmax(logits, dim=0)
+    
+    # Get top 5 emotions and their probabilities
+    top_k = 5
+    top_probs, top_indices = torch.topk(probabilities, top_k)
+    
+    # Create dictionary with top emotions and their scores
     extractedEmotions = {}
-    for label, prob in zip(top5_labels, top5_probs):
-        extractedEmotions[label] = prob
-        print(f"{label}: {prob:.4f}")
-
+    for i in range(top_k):
+        emotion = emotion_labels[top_indices[i]]
+        score = top_probs[i].item()
+        extractedEmotions[emotion] = score
+    
+    print("Top 5 Predicted Emotions:")
+    for emotion, score in extractedEmotions.items():
+        print(f"{emotion}: {score:.4f}")
+    
     print("") # TESTING PURPOSES ONLY
 
     ########################################################################################################
     # Layer 2 - Extracting Intent using OpenAI 4o-mini model
     ########################################################################################################
 
-    extractedIntent = extract_intent(cleanedInput, client)
+    extractedIntent = extractIntent(cleanedInput, conversation_history, client)
 
     print("Intent Response: ", extractedIntent) # TESTING PURPOSES ONLY
     print("type of response of intent prompt: ", type(extractedIntent)) # TESTING PURPOSES ONLY
     print("") # TESTING PURPOSES ONLY
 
+
+    exit()
     ########################################################################################################
     # Layer 3 - Generating Response using OpenAI 4o model
     ########################################################################################################
 
-    response = generate_response(cleanedInput, extractedEmotions, extractedIntent, client)
+    response = generateResponse(cleanedInput, extractedEmotions, extractedIntent, conversation_history, client)
 
     print("Response: ", response) # TESTING PURPOSES ONLY
     print("type of response: ", type(response)) # TESTING PURPOSES ONLY
@@ -221,7 +249,7 @@ if __name__ == "__main__":
     baseResponseObject = client.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {"role": "system", "content": "You are a friend that can give relationship advice."},
+            {"role": "system", "content": "You are a friend that is experienced in dating. The Question is coming from someone seeking advice. Give a response to each question."},
             {
                 "role": "user",
                 "content": cleanedInput,
@@ -236,8 +264,25 @@ if __name__ == "__main__":
     print("Model Response: ", modelResponse) # TESTING PURPOSES ONLY
 
     ################################################################################
+<<<<<<< HEAD
     # testing the performance of the intent layer
     ################################################################################
+=======
+    # Evaluate the emotional intelligence of responses
+    ################################################################################
+    from evaluation import evaluate_emotional_intelligence
+    
+    print("\nEvaluating emotional intelligence of responses...")
+    evaluation = evaluate_emotional_intelligence(cleanedInput, modelResponse, baseResponse, client)
+    
+    print("\n=== EMOTIONAL INTELLIGENCE EVALUATION ===")
+    print(json.dumps(evaluation, indent=2))
+    
+    print("\nResponse A (3-Layer) Total Score:", evaluation["response_a"]["total"])
+    print("Response B (Base) Total Score:", evaluation["response_b"]["total"])
+    print("Winner:", evaluation["winner"])
+
+>>>>>>> f9a929de84333b36e326f911b127b1acecf24edc
 
     # Emotion labels from your BERT model
     emotion_labels = [
