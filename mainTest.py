@@ -45,7 +45,13 @@ def cleanInput(noisyInput, client):
         return "Error: Unable to parse response."
     
 # Function to extract intent from user input using GPT-4o-mini
-def extractIntent(input, client):
+def extractIntent(input, conversation_history, client):
+
+    system_prompt = f"""
+    {IntentPrompt}
+
+    Past conversation history: {conversation_history}
+    """
     
     completion = client.chat.completions.create(
         model="gpt-4o",
@@ -66,9 +72,9 @@ def extractIntent(input, client):
         return "Error: Unable to parse response."
     
 # Function to generate a response using GPT-4o model
-def generateResponse(input, emotions, intent, client):
+def generateResponse(input, emotions, intent, conversation_history, client):
 
-    finalInput = f"User Input: {input}\nEmotions: {json.dumps(emotions)}\nIntent: {intent}"
+    finalInput = f"User Input: {input}\nEmotions: {json.dumps(emotions)}\nIntent: {intent} \nPast conversation history: {conversation_history}"
 
     completion = client.chat.completions.create(
         model="gpt-4o",
@@ -111,6 +117,7 @@ if __name__ == "__main__":
     cleanedInput = cleanInput(noisyInput, client)
 
     print("Cleaned Input: ", cleanedInput) # TESTING PURPOSES ONLY
+    conversation_history.append(f"User: {cleanedInput}")  # Append cleaned input to conversation history
 
     ########################################################################################################
     # Layer 1 - Extracting Emotions using Pre-trained BERT model (trained on GoEmotions dataset)
@@ -158,7 +165,7 @@ if __name__ == "__main__":
     # Layer 2 - Extracting Intent using OpenAI 4o-mini model
     ########################################################################################################
 
-    extractedIntent = extractIntent(cleanedInput, client)
+    extractedIntent = extractIntent(cleanedInput, conversation_history, client)
 
     print("Intent Response: ", extractedIntent) # TESTING PURPOSES ONLY
     print("type of response of intent prompt: ", type(extractedIntent)) # TESTING PURPOSES ONLY
@@ -168,7 +175,7 @@ if __name__ == "__main__":
     # Layer 3 - Generating Response using OpenAI 4o model
     ########################################################################################################
 
-    response = generateResponse(cleanedInput, extractedEmotions, extractedIntent, client)
+    response = generateResponse(cleanedInput, extractedEmotions, extractedIntent, conversation_history, client)
 
     print("Response: ", response) # TESTING PURPOSES ONLY
     print("type of response: ", type(response)) # TESTING PURPOSES ONLY
@@ -197,6 +204,21 @@ if __name__ == "__main__":
 
     modelResponse = response
     print("Model Response: ", modelResponse) # TESTING PURPOSES ONLY
+
+    ################################################################################
+    # Evaluate the emotional intelligence of responses
+    ################################################################################
+    from evaluation import evaluate_emotional_intelligence
+    
+    print("\nEvaluating emotional intelligence of responses...")
+    evaluation = evaluate_emotional_intelligence(cleanedInput, modelResponse, baseResponse, client)
+    
+    print("\n=== EMOTIONAL INTELLIGENCE EVALUATION ===")
+    print(json.dumps(evaluation, indent=2))
+    
+    print("\nResponse A (3-Layer) Total Score:", evaluation["response_a"]["total"])
+    print("Response B (Base) Total Score:", evaluation["response_b"]["total"])
+    print("Winner:", evaluation["winner"])
 
 
 

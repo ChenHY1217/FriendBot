@@ -69,7 +69,7 @@ def extractIntent(input, conversation_history, client):
 # Function to generate a response using GPT-4o model
 def generateResponse(input, emotions, intent, conversation_history, client):
 
-    finalInput = f"User Input: {input}\nEmotions: {json.dumps(emotions)}\nIntent: {intent}"
+    finalInput = f"User Input: {input}\nEmotions: {json.dumps(emotions)}\nIntent: {intent} \nPast conversation history: {conversation_history}"
 
     completion = client.chat.completions.create(
         model="gpt-4o",
