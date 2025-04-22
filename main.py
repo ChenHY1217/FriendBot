@@ -1,8 +1,8 @@
 # Main code for running FriendBot IVA Project
-from dotenv import load_dotenv
-import os
-import openai
 import json
+import os
+from dotenv import load_dotenv
+import openai
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 from prompts import IntentPrompt, ResponsePrompt # Importing the prompts from prompts.py
@@ -12,7 +12,7 @@ from prompts import IntentPrompt, ResponsePrompt # Importing the prompts from pr
 
 
 # Function to clean up noisy user input using GPT-4o-mini
-def cleanInput(noisyInput, client):
+def clean_input(noisyInput, client):
     # Prompt designed to get GPT to clean and understand user input
     system_prompt = """
     You are an assistant that helps clean and understand user input. The input will be from user's who are seeking relationship advice. Your task is to fix spelling errors and remove any unneccesary noise. However, try your best to preserve what the user is trying to say. In other words, do not change the content of the message, just clean it up.
@@ -40,7 +40,7 @@ def cleanInput(noisyInput, client):
         return "Error: Unable to parse response."
     
 # Function to extract intent from user input using GPT-4o-mini
-def extractIntent(input, conversation_history, client):
+def extract_intent(input, conversation_history, client):
 
     system_prompt = f"""
     {IntentPrompt}
@@ -67,7 +67,7 @@ def extractIntent(input, conversation_history, client):
         return "Error: Unable to parse response."
     
 # Function to generate a response using GPT-4o model
-def generateResponse(input, emotions, intent, conversation_history, client):
+def generate_response(input, emotions, intent, conversation_history, client):
 
     finalInput = f"User Input: {input}\nEmotions: {json.dumps(emotions)}\nIntent: {intent}"
 
@@ -164,7 +164,7 @@ if __name__ == "__main__":
         # Layer 2 - Extracting Intent using OpenAI 4o-mini model
         ########################################################################################################
 
-        extractedIntent = extractIntent(cleanedInput, conversation_history, client)
+        extractedIntent = extract_intent(cleanedInput, conversation_history, client)
 
         print("Intent Response: ", extractedIntent) # TESTING PURPOSES ONLY
         print("type of response of intent prompt: ", type(extractedIntent)) # TESTING PURPOSES ONLY
@@ -174,7 +174,7 @@ if __name__ == "__main__":
         # Layer 3 - Generating Response using OpenAI 4o model
         ########################################################################################################
 
-        response = generateResponse(cleanedInput, extractedEmotions, extractedIntent, conversation_history, client)
+        response = generate_response(cleanedInput, extractedEmotions, extractedIntent, conversation_history, client)
 
         print("Response: ", response) # TESTING PURPOSES ONLY
         print("type of response: ", type(response)) # TESTING PURPOSES ONLY
