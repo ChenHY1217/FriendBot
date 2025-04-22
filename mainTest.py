@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 import openai
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
+import pandas as pd
+from sklearn.metrics import accuracy_score
 from prompts import IntentPrompt, ResponsePrompt # Importing the prompts from prompts.py
 
 # Can change temperature to reduce randomness in output from GPT-4o-mini
@@ -125,6 +127,7 @@ def generate_response(user_input, emotions, intent, openai_client):
 if __name__ == "__main__":
 
     load_dotenv()  # Load environment variables from .env file
+    print("ENV KEYS:", os.environ.get("OPENAI_API_KEY"))
     client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
     conversation_history = []  # Initialize conversation history
@@ -232,6 +235,88 @@ if __name__ == "__main__":
     modelResponse = response
     print("Model Response: ", modelResponse) # TESTING PURPOSES ONLY
 
+    ################################################################################
+    # testing the performance of the intent layer
+    ################################################################################
 
+    # Emotion labels from your BERT model
+    emotion_labels = [
+        "Admiration", "Amusement", "Anger", "Annoyance", "Approval", "Caring", "Confusion",
+        "Curiosity", "Desire", "Disappointment", "Disapproval", "Disgust", "Embarrassment",
+        "Excitement", "Fear", "Gratitude", "Grief", "Joy", "Love", "Nervousness", "Optimism",
+        "Pride", "Realization", "Relief", "Remorse", "Sadness", "Surprise", "Neutral"
+    ]
 
+    # Remapping: model_label → simplified label (based on dataset clusters)
+    emotion_map = {
+        "Admiration": "Joy",
+        "Amusement": "Joy",
+        "Anger": "Anger",
+        "Annoyance": "Anger",
+        "Approval": "Trust",
+        "Caring": "Trust",
+        "Confusion": "Fear",
+        "Curiosity": "Anticipation",
+        "Desire": "Anticipation",
+        "Disappointment": "Sadness",
+        "Disapproval": "Anger",
+        "Disgust": "Disgust",
+        "Embarrassment": "Shame",
+        "Excitement": "Joy",
+        "Fear": "Fear",
+        "Gratitude": "Trust",
+        "Grief": "Sadness",
+        "Joy": "Joy",
+        "Love": "Joy",
+        "Nervousness": "Fear",
+        "Optimism": "Anticipation",
+        "Pride": "Joy",
+        "Realization": "Surprise",
+        "Relief": "Joy",
+        "Remorse": "Sadness",
+        "Sadness": "Sadness",
+        "Surprise": "Surprise",
+        "Neutral": "Neutral"
+    }
 
+    # Debug CWD and file visibility
+    print("CWD:", os.getcwd())
+    print("FILES:", os.listdir())
+
+    # Load dataset
+    df = pd.read_csv("data/dating_emotion_dataset.csv", encoding="latin-1")
+
+    correct = 0
+    total = 0
+
+    for _, row in df.iterrows():
+        text = row["Question"]
+        true_emotions_raw = [e.strip() for e in row["Emotions"].split(",")]
+
+        # Map true emotions into simplified labels
+        true_emotions = []
+        for emo in true_emotions_raw:
+            if "(" in emo:  # e.g., "Sadness (worry)"
+                emo = emo.split("(")[0].strip()
+            true_emotions.append(emo)
+
+        # Tokenize and run through model
+        inputs = tokenizer(text, return_tensors="pt")
+        with torch.no_grad():
+            outputs = model(**inputs)
+            probs = torch.sigmoid(outputs.logits).squeeze(0)
+
+        # Get top-3 predictions and map them
+        top3_indices = torch.argsort(probs, descending=True)[:3]
+        top3_raw = [emotion_labels[i] for i in top3_indices]
+        top3_remapped = [emotion_map[emo] for emo in top3_raw]
+
+        # Check if any mapped prediction is in the mapped true set
+        if any(pred in true_emotions for pred in top3_remapped):
+            correct += 1
+        total += 1
+
+    # Compute accuracy
+    accuracy = correct / total
+    print(f"\nLayer 1 Emotion Classification Accuracy (remapped, top-3 in true set): "
+        f"{accuracy:.2%} ({correct}/{total} correct)")
