@@ -183,7 +183,7 @@ if __name__ == "__main__":
         baseResponse = client.chat.completions.create(
             model="gpt-4o",
             messages=[
-                {"role": "system", "content": "You are a friend that is experienced in dating. The Question is coming from someone seeking advice. Give a response to each question."},
+                {"role": "system", "content": "You are a friend that is experienced in dating. The Question is coming from someone seeking advice. Give a response to each question as a friend conversationally."},
                 {
                     "role": "user",
                     "content": cleanedInput,
@@ -204,4 +204,3 @@ if __name__ == "__main__":
         print("FriendBot: ", response)  # Print the response from the model
 
 
-        

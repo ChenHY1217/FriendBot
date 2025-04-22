@@ -90,7 +90,7 @@ def get_base_response(input_text, client):
     response_object = client.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {"role": "system", "content": "You are a friend that is experienced in dating. The Question is coming from someone seeking advice. Give a response to each question."},
+            {"role": "system", "content": "You are a friend that is experienced in dating. The Question is coming from someone seeking advice. Give a response to each question as a friend conversationally."},
             {"role": "user", "content": input_text}
         ],
     )
@@ -107,7 +107,7 @@ def process_question(question, model, tokenizer, emotion_labels, client):
     extracted_emotions = extract_emotions_with_bert(cleaned_input, model, tokenizer, emotion_labels)
     
     # 2. Extract intent using GPT
-    extracted_intent = extractIntent(cleaned_input, conversation_history, client)
+    extracted_intent = extractIntent(cleaned_input, client)
     
     # 3. Generate response using our architecture
     model_response = generateResponse(cleaned_input, extracted_emotions, extracted_intent, conversation_history, client)
@@ -119,17 +119,17 @@ def process_question(question, model, tokenizer, emotion_labels, client):
     evaluation = evaluate_emotional_intelligence(cleaned_input, model_response, base_response, client)
     
     # Determine winner
-    winner_response = model_response if evaluation["winner"] == "Response A (3-layer architecture)" else base_response
-    winner_name = "3-layer" if evaluation["winner"] == "Response A (3-layer architecture)" else "baseline"
-    winner_score = evaluation["response_a"]["total"] if evaluation["winner"] == "Response A (3-layer architecture)" else evaluation["response_b"]["total"]
+    winner_response = model_response if evaluation["winner"] == "model_response" else base_response
+    winner_name = "3-layer Model" if evaluation["winner"] == "model_response" else "Base Model (GPT-4o)"
+    winner_score = evaluation["model_response"]["total"] if evaluation["winner"] == "model_response" else evaluation["base_response"]["total"]
     
     return {
         "question": question,
         "winner": winner_name,
         "winning_response": winner_response,
         "winning_score": winner_score,
-        "3layer_score": evaluation["response_a"]["total"],
-        "baseline_score": evaluation["response_b"]["total"]
+        "3layer_score": evaluation["model_response"]["total"],
+        "baseline_score": evaluation["base_response"]["total"]
     }
 
 def main():
@@ -160,9 +160,9 @@ def main():
         results.append(result)
         
         # Count wins
-        if result["winner"] == "3-layer":
+        if result["winner"] == "3-layer Model":
             three_layer_wins += 1
-        elif result["winner"] == "baseline":
+        elif result["winner"] == "Base Model (GPT-4o)":
             baseline_wins += 1
         else:
             ties += 1

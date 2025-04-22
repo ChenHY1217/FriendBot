@@ -114,7 +114,6 @@ if __name__ == "__main__":
 
     INTRO = """
     Welcome to FriendBot! I am here to help you with your relationship concerns. I will analyze your input and provide you with insights and advice, or just be a listening ear. Think of me as a friend you can vent to and Let's get started!
-
     """
     print(INTRO)  # Print the introduction message
     print("")  # TESTING PURPOSES ONLY
@@ -224,17 +223,15 @@ if __name__ == "__main__":
     print("type of response of intent prompt: ", type(extractedIntent)) # TESTING PURPOSES ONLY
     print("") # TESTING PURPOSES ONLY
 
-
-    exit()
     ########################################################################################################
     # Layer 3 - Generating Response using OpenAI 4o model
     ########################################################################################################
 
     response = generateResponse(cleanedInput, extractedEmotions, extractedIntent, conversation_history, client)
 
-    print("Response: ", response) # TESTING PURPOSES ONLY
-    print("type of response: ", type(response)) # TESTING PURPOSES ONLY
-    print("") # TESTING PURPOSES ONLY
+    # print("Response: ", response) # TESTING PURPOSES ONLY
+    # print("type of response: ", type(response)) # TESTING PURPOSES ONLY
+    # print("") # TESTING PURPOSES ONLY
 
 
     ################################################################################
@@ -246,7 +243,7 @@ if __name__ == "__main__":
     baseResponseObject = client.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {"role": "system", "content": "You are a friend that is experienced in dating. The Question is coming from someone seeking advice. Give a response to each question."},
+            {"role": "system", "content": "You are a friend that is experienced in dating. The Question is coming from someone seeking advice. Give a response to each question as a friend conversationally."},
             {
                 "role": "user",
                 "content": cleanedInput,
@@ -256,6 +253,8 @@ if __name__ == "__main__":
 
     baseResponse = baseResponseObject.choices[0].message.content
     print("Base Response: ", baseResponse) # TESTING PURPOSES ONLY
+
+    print("") # TESTING PURPOSES ONLY
 
     modelResponse = response
     print("Model Response: ", modelResponse) # TESTING PURPOSES ONLY
@@ -271,8 +270,8 @@ if __name__ == "__main__":
     print("\n=== EMOTIONAL INTELLIGENCE EVALUATION ===")
     print(json.dumps(evaluation, indent=2))
     
-    print("\nResponse A (3-Layer) Total Score:", evaluation["response_a"]["total"])
-    print("Response B (Base) Total Score:", evaluation["response_b"]["total"])
+    print("Model Response (3-Layer) Total Score:", evaluation["model_response"]["total"])
+    print("Base Response (Base) Total Score:", evaluation["base_response"]["total"])
     print("Winner:", evaluation["winner"])
 
 

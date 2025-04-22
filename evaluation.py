@@ -24,9 +24,9 @@ def evaluate_emotional_intelligence(user_input, model_response, base_response, c
     
     USER INPUT: {user_input}
     
-    RESPONSE A (3-LAYER ARCHITECTURE): {model_response}
+    MODEL RESPONSE (3-LAYER ARCHITECTURE): {model_response}
     
-    RESPONSE B (BASE MODEL): {base_response}
+    BASE RESPONSE (BASE MODEL): {base_response}
     
     EVALUATION RUBRIC (score each category from 1-10):
     
@@ -62,51 +62,48 @@ def evaluate_emotional_intelligence(user_input, model_response, base_response, c
     4. Specific suggestions for improving the lower-scoring response
     
     Format your response as a JSON object with the following structure:
-    {
-      "response_a": {
-        "emotional_recognition": {"score": X, "explanation": "..."},
-        "empathetic_response": {"score": X, "explanation": "..."},
-        "relationship_insight": {"score": X, "explanation": "..."},
-        "balance": {"score": X, "explanation": "..."},
-        "communication_style": {"score": X, "explanation": "..."},
+    {{
+      "model_response": {{
+        "emotional_recognition": {{"score": X, "explanation": "..."}},
+        "empathetic_response": {{"score": X, "explanation": "..."}},
+        "relationship_insight": {{"score": X, "explanation": "..."}},
+        "balance": {{"score": X, "explanation": "..."}},
+        "communication_style": {{"score": X, "explanation": "..."}},
         "total": X
-      },
-      "response_b": {
-        "emotional_recognition": {"score": X, "explanation": "..."},
-        "empathetic_response": {"score": X, "explanation": "..."},
-        "relationship_insight": {"score": X, "explanation": "..."},
-        "balance": {"score": X, "explanation": "..."},
-        "communication_style": {"score": X, "explanation": "..."},
+      }},
+      "base_response": {{
+        "emotional_recognition": {{"score": X, "explanation": "..."}},
+        "empathetic_response": {{"score": X, "explanation": "..."}},
+        "relationship_insight": {{"score": X, "explanation": "..."}},
+        "balance": {{"score": X, "explanation": "..."}},
+        "communication_style": {{"score": X, "explanation": "..."}},
         "total": X
-      },
-      "winner": "response_a or response_b",
+      }},
+      "winner": "model_response or base_response",
       "justification": "...",
       "improvement_suggestions": "..."
-    }
+    }}
     """
     
-    completion = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": "You are an expert evaluator of emotional intelligence in AI responses."},
-            {
-                "role": "user",
-                "content": evaluation_prompt.format(
-                    user_input=user_input,
-                    model_response=model_response,
-                    base_response=base_response
-                )
-            }
-        ],
-        response_format={"type": "json_object"}
-    )
-    
     try:
+        completion = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "You are an expert evaluator of emotional intelligence in AI responses."},
+                {
+                    "role": "user",
+                    "content": evaluation_prompt.format(
+                        user_input=user_input,
+                        model_response=model_response,
+                        base_response=base_response
+                    )
+                }
+            ],
+            response_format={"type": "json_object"}
+        )
+        
         evaluation = json.loads(completion.choices[0].message.content)
         return evaluation
-    except json.JSONDecodeError:
-        return {"error": "Unable to parse evaluation response."}
-
-# Example usage in mainTest.py:
-# evaluation = evaluate_emotional_intelligence(cleanedInput, modelResponse, baseResponse, client)
-# print(json.dumps(evaluation, indent=2))
+    except Exception as e:
+        print(f"Error in evaluation: {str(e)}")
+        return {"error": f"Evaluation failed: {str(e)}"}
