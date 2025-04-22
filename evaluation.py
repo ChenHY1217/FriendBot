@@ -19,6 +19,8 @@ def evaluate_emotional_intelligence(user_input, model_response, base_response, c
     evaluation_prompt = """
     You are an expert evaluator of emotional intelligence in AI responses to relationship advice scenarios. 
     Analyze the following user input and two different AI responses, then score them based on the rubric below.
+
+    Note the response is supposed to be from the standpoint of a relationship expert friend.
     
     USER INPUT: {user_input}
     
