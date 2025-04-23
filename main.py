@@ -7,10 +7,6 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 from prompts import IntentPrompt, ResponsePrompt # Importing the prompts from prompts.py
 
-# Can change temperature to reduce randomness in output from GPT-4o-mini
-
-
-
 # Function to clean up noisy user input using GPT-4o-mini
 def clean_input(noisyInput, client):
     # Prompt designed to get GPT to clean and understand user input
@@ -115,7 +111,7 @@ if __name__ == "__main__":
         noisyInput = input("User: ")  # Get user input
         cleanedInput = clean_input(noisyInput, client)
 
-        print("Cleaned Input: ", cleanedInput) # TESTING PURPOSES ONLY
+        # print("Cleaned Input: ", cleanedInput) # TESTING PURPOSES ONLY
         conversation_history.append(f"User: {cleanedInput}")  # Append cleaned input to conversation history
         conversation_history_base.append(f"User: {cleanedInput}")  # Append cleaned input to base conversation history
 
@@ -159,11 +155,11 @@ if __name__ == "__main__":
             score = top_probs[i].item()
             extractedEmotions[emotion] = score
         
-        print("Top 5 Predicted Emotions:")
-        for emotion, score in extractedEmotions.items():
-            print(f"{emotion}: {score:.4f}")
+        # print("Top 5 Predicted Emotions:")
+        # for emotion, score in extractedEmotions.items():
+        #     print(f"{emotion}: {score:.4f}")
         
-        print("") # TESTING PURPOSES ONLY
+        # print("") # TESTING PURPOSES ONLY
 
         ########################################################################################################
         # Layer 2 - Extracting Intent using OpenAI 4o-mini model
@@ -171,9 +167,9 @@ if __name__ == "__main__":
 
         extractedIntent = extract_intent(cleanedInput, conversation_history, client)
 
-        print("Intent Response: ", extractedIntent) # TESTING PURPOSES ONLY
-        print("type of response of intent prompt: ", type(extractedIntent)) # TESTING PURPOSES ONLY
-        print("") # TESTING PURPOSES ONLY
+        # print("Intent Response: ", extractedIntent) # TESTING PURPOSES ONLY
+        # print("type of response of intent prompt: ", type(extractedIntent)) # TESTING PURPOSES ONLY
+        # print("") # TESTING PURPOSES ONLY
 
         ########################################################################################################
         # Layer 3 - Generating Response using OpenAI 4o model
@@ -191,9 +187,9 @@ if __name__ == "__main__":
             ],
         ).choices[0].message.content
 
-        print("Response: ", response) # TESTING PURPOSES ONLY
-        print("type of response: ", type(response)) # TESTING PURPOSES ONLY
-        print("") # TESTING PURPOSES ONLY
+        # print("Response: ", response) # TESTING PURPOSES ONLY
+        # print("type of response: ", type(response)) # TESTING PURPOSES ONLY
+        # print("") # TESTING PURPOSES ONLY
 
         conversation_history.append(f"FriendBot: {response}")  # Append response to conversation history
         conversation_history_base.append(f"GPT 4o: {baseResponse}")
@@ -202,5 +198,7 @@ if __name__ == "__main__":
         print("GPT 4o: ", baseResponse)  # Print the response from the model
         print("")
         print("FriendBot: ", response)  # Print the response from the model
+
+        print("")
 
 

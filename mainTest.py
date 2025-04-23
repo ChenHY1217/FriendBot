@@ -6,7 +6,6 @@ import openai
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
 import torch
 import pandas as pd
-from sklearn.metrics import accuracy_score
 from prompts import IntentPrompt, ResponsePrompt # Importing the prompts from prompts.py
 
 # Can change temperature to reduce randomness in output from GPT-4o-mini
@@ -342,8 +341,6 @@ if __name__ == "__main__":
     ################################################################################
     # testing the performance of the intent layer
     ################################################################################
-    # Evaluate the emotional intelligence of responses
-    ################################################################################
     from evaluation import evaluate_emotional_intelligence
     
     print("\nEvaluating emotional intelligence of responses...")
@@ -363,6 +360,11 @@ if __name__ == "__main__":
     model = AutoModelForSequenceClassification.from_pretrained(model_name)
 
     # Define labels and mapping
+    ################################################################################
+    # testing the performance of the emotion layer
+    ################################################################################
+    # Emotion labels from your BERT model
+    """
     emotion_labels = [
         "Admiration", "Amusement", "Anger", "Annoyance", "Approval", "Caring", "Confusion",
         "Curiosity", "Desire", "Disappointment", "Disapproval", "Disgust", "Embarrassment",
@@ -447,3 +449,9 @@ if __name__ == "__main__":
 
     print(f"Intent Classification Accuracy: {norm_accuracy:.2%} ({correct_norm}/{total})")
     print(f"Total examples evaluated: {total}")
+    # Compute accuracy
+    accuracy = correct / total
+    print(f"\nLayer 1 Emotion Classification Accuracy (remapped, top-3 in true set): "
+        f"{accuracy:.2%} ({correct}/{total} correct)")
+
+    """
