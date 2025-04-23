@@ -1,0 +1,51 @@
+Question,Emotions,detected_emotions
+"I am nervous about asking her out, what if she says no?","Fear, Anticipation","['confusion', 'curiosity', 'fear']"
+How do I tell if hes actually interested in me?,"Uncertainty ,Sadness (worry), Trust (hope)",['curiosity']
+I cannot stop smiling whenever I see his name on my phone.,Joy,"['anger', 'annoyance', 'disapproval']"
+Why did she ghost me after such a great first date?,"Surprise, Sadness","['admiration', 'curiosity']"
+I hate how jealous I get when he talks to other girls.,"Anger, Sadness","['anger', 'annoyance']"
+Whats the best way to calm firstâdate jitters?,"Fear, Trust",['curiosity']
+I feel so inadequate compared to her exes.,"Sadness, Disgust (selfdirected)",[]
+He remembered my favorite movieâshould I be excited?,"Joy, Anticipation","['curiosity', 'excitement']"
+Why do I panic when he takes too long to reply?,"Fear, Sadness","['confusion', 'curiosity']"
+How do I rebuild trust after he lied about his past?,"Sadness, Anticipation","['confusion', 'curiosity']"
+Im so proud that she introduced me to her friends.,"Joy, Trust","['admiration', 'joy']"
+What do I do if he brings up his ex on date two?,"Surprise, Sadness","['confusion', 'curiosity']"
+I feel disgusted by how flaky she is.,"Disgust, Anger","['disgust', 'embarrassment']"
+How can I show genuine excitement without seeming desperate?,"Joy, Anticipation","['confusion', 'curiosity']"
+He canceled againâam I being dramatic?,"Sadness, Fear","['confusion', 'curiosity']"
+Im terrified of getting hurt again.,"Fear, Sadness",['fear']
+Why do I trust him so quickly when Ive been burned before?,"Trust, Fear","['confusion', 'curiosity']"
+How can I surprise her in a thoughtful way?,"Anticipation, Joy","['curiosity', 'surprise']"
+Im so angry he flaked on our anniversary.,"Anger, Sadness",['anger']
+Should I be worried if shes too quiet on our date?,"Fear, Sadness","['confusion', 'curiosity', 'fear']"
+I love how comfortable I feel around him.,"Trust, Joy",['love']
+He didnt text back for three hoursâwhats going on?,"Fear, Surprise","['confusion', 'curiosity']"
+I feel lonely even when were together.,"Sadness, Disgust (selfdirected)",['sadness']
+How do I handle butterflies without freaking out?,"Fear, Joy","['confusion', 'curiosity']"
+Im frustrated that shes always late.,"Anger, Sadness","['anger', 'annoyance']"
+He winked at meâdoes that mean something?,"Surprise, Trust","['confusion', 'curiosity']"
+Im anxious about meeting her parents.,"Fear, Anticipation",['fear']
+How can I hide my disappointment when he cancels?,"Sadness, Fear","['confusion', 'curiosity']"
+I feel hopeful after our great conversation.,"Trust, Joy","['admiration', 'desire', 'optimism']"
+What do I do if I get butterflies but dont want to act weird?,"Fear, Anticipation","['confusion', 'curiosity']"
+Im furious she lied about her job.,"Anger, Sadness","['anger', 'annoyance']"
+How can I surprise him on Valentines Day?,"Joy, Anticipation","['curiosity', 'excitement', 'surprise']"
+Im upset that he didnt notice my new haircut.,"Sadness, Anger","['disappointment', 'sadness']"
+Why does my heart race when I see his text?,"Joy, Fear","['confusion', 'curiosity']"
+I feel disgusted by the lies I told to impress her.,"Disgust, Sadness",['disgust']
+What if I mess up our first kiss?,"Fear, Anticipation","['confusion', 'curiosity']"
+Im thrilled he finally asked me out.,"Joy, Surprise","['excitement', 'joy']"
+How do I cope when she keeps comparing me to her ex?,"Sadness, Anger","['confusion', 'curiosity']"
+Im nervous about meeting him in person.,"Fear, Anticipation","['fear', 'nervousness']"
+What do I do if she seems distant lately?,"Sadness, Fear","['confusion', 'curiosity']"
+He made me breakfast in bedâshould I be touched?,"Joy, Trust",['curiosity']
+Im annoyed by his constant teasing.,"Anger, Surprise","['anger', 'annoyance', 'disgust']"
+How can I stay calm when I really like her?,"Fear, Trust","['confusion', 'curiosity']"
+Im heartbroken after our argument last night.,Sadness,['sadness']
+What if he doesnt like me back?,"Fear, Sadness","['confusion', 'curiosity']"
+Im excited for our weekend getaway.,"Joy, Anticipation",['excitement']
+Why do I feel so foolish after my bad joke?,"Sadness, Disgust","['confusion', 'curiosity']"
+I feel hopeful but also terrified of commitment.,"Anticipation, Fear",['fear']
+How do I rebuild my confidence after rejection?,"Sadness, Trust","['confusion', 'curiosity']"
+Im grateful he listened to me vent.,"Trust, Joy","['approval', 'caring', 'gratitude', 'joy']"
