@@ -6,7 +6,7 @@ import openai
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
 import torch
 import pandas as pd
-from prompts import IntentPrompt, ResponsePrompt # Importing the prompts from prompts.py
+from prompts import IntentPrompt, ResponsePrompt, BenchmarkPrompt # Importing the prompts from prompts.py
 
 # Can change temperature to reduce randomness in output from GPT-4o-mini
 
@@ -15,7 +15,6 @@ from prompts import IntentPrompt, ResponsePrompt # Importing the prompts from pr
 # the performance of the 3-layer architecutre for emotional intelligence in responses.
 # We will compare the performance of the 3-layer architecture with just a generic LLM like GPT-4o.
 ###################################################################################################
-
 
 # Function to clean up noisy user input using GPT-4o-mini
 def clean_input(noisy_input, openai_client):
@@ -91,7 +90,7 @@ def generateResponse(input, emotions, intent, conversation_history, client):
     completion = client.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {"role": "system", "content": ResponsePrompt},
+            {"role": "system", "content": BenchmarkPrompt},
             {
                 "role": "user",
                 "content": finalInput,
@@ -186,7 +185,7 @@ def get_normalized_intent(question, client):
 if __name__ == "__main__":
 
     load_dotenv()  # Load environment variables from .env file
-    print("ENV KEYS:", os.environ.get("OPENAI_API_KEY"))
+    # print("ENV KEYS:", os.environ.get("OPENAI_API_KEY"))
     client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
     conversation_history = []  # Initialize conversation history
@@ -312,7 +311,6 @@ if __name__ == "__main__":
     # print("type of response: ", type(response)) # TESTING PURPOSES ONLY
     # print("") # TESTING PURPOSES ONLY
 
-
     ################################################################################
     # Benchmarking / Evaluating the performance of the 3-layer architecture
     ################################################################################
@@ -322,7 +320,7 @@ if __name__ == "__main__":
     baseResponseObject = client.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {"role": "system", "content": "You are a friend that is experienced in dating. The Question is coming from someone seeking advice. Give a response to each question as a friend conversationally."},
+            {"role": "system", "content": BenchmarkPrompt},
             {
                 "role": "user",
                 "content": cleanedInput,
@@ -339,8 +337,8 @@ if __name__ == "__main__":
     print("Model Response: ", modelResponse) # TESTING PURPOSES ONLY
 
     ################################################################################
-    # testing the performance of the intent layer
-    ################################################################################
+    # testing the performance of the final responses
+    #################################################################################
     from evaluation import evaluate_emotional_intelligence
     
     print("\nEvaluating emotional intelligence of responses...")
@@ -354,7 +352,7 @@ if __name__ == "__main__":
     print("Winner:", evaluation["winner"])
 
 
-        # Load model
+    # Load model
     model_name = "bhadresh-savani/bert-base-go-emotion"
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForSequenceClassification.from_pretrained(model_name)

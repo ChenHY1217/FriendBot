@@ -17,7 +17,7 @@ py mainTest.py
 
 It has a default NOISY_INPUT value for user input. Feel free to change it to test other inputs.
 
-It will run what is in main.py but only once. However, this version will have all the intermediate information like predicted emotions and extracted intent. Then it will do an Emotional Intelligence Evaluation / Comparison of the two model responses and declare the "winner".
+It will run what is in main.py but only once. However, this version will have all the intermediate information like predicted emotions and extracted intent. Then it will do an Emotional Intelligence Evaluation / Comparison of the two model responses and declare the "winner" It also runs benchmarks on emotion detection accuracy and intent detection accuracy.
 
 Below are the instructions for running the evaluation pipeline for final response evaluation based on 50 question dataset:
 

@@ -7,7 +7,7 @@ import openai
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from evaluation import evaluate_emotional_intelligence
-from prompts import IntentPrompt, ResponsePrompt
+from prompts import IntentPrompt, ResponsePrompt, BenchmarkPrompt
 
 # Load environment variables
 load_dotenv()
@@ -57,7 +57,7 @@ def generateResponse(input_text, emotions, intent, conversation_history, client)
     completion = client.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {"role": "system", "content": ResponsePrompt},
+            {"role": "system", "content": BenchmarkPrompt},
             {"role": "user", "content": final_input}
         ],
     )
@@ -90,7 +90,7 @@ def get_base_response(input_text, client):
     response_object = client.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {"role": "system", "content": "You are a friend that is experienced in dating. The Question is coming from someone seeking advice. Give a response to each question as a friend conversationally."},
+            {"role": "system", "content": BenchmarkPrompt},
             {"role": "user", "content": input_text}
         ],
     )

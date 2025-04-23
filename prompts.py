@@ -112,3 +112,6 @@ Note: Sometimes the User may not be looking for advice, but rather just a listen
 Based on the extracted emotions and intent provided, please craft your most helpful response:
 
 """
+
+# This is the benchmark prompt used to compare our model response with the base response.
+BenchmarkPrompt = "You are a friend that is experienced in dating. The Question is coming from someone seeking advice. Give a response to each question as a friend conversationally. Consider Emotions and Intent of the user."

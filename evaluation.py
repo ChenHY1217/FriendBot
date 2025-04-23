@@ -1,6 +1,5 @@
 import json
 
-
 def evaluate_emotional_intelligence(user_input, model_response, base_response, client):
     """
     Evaluates the emotional intelligence of two different responses (3-layer architecture vs base model)

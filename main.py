@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 import openai
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
-from prompts import IntentPrompt, ResponsePrompt # Importing the prompts from prompts.py
+from prompts import IntentPrompt, ResponsePrompt, BenchmarkPrompt # Importing the prompts from prompts.py
 
 # Function to clean up noisy user input using GPT-4o-mini
 def clean_input(noisyInput, client):
@@ -70,7 +70,7 @@ def generate_response(input, emotions, intent, conversation_history, client):
     completion = client.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {"role": "system", "content": ResponsePrompt},
+            {"role": "system", "content": BenchmarkPrompt},
             {
                 "role": "user",
                 "content": finalInput,
@@ -179,7 +179,7 @@ if __name__ == "__main__":
         baseResponse = client.chat.completions.create(
             model="gpt-4o",
             messages=[
-                {"role": "system", "content": "You are a friend that is experienced in dating. The Question is coming from someone seeking advice. Give a response to each question as a friend conversationally."},
+                {"role": "system", "content": BenchmarkPrompt},
                 {
                     "role": "user",
                     "content": cleanedInput,
