@@ -364,7 +364,7 @@ if __name__ == "__main__":
     # testing the performance of the emotion layer
     ################################################################################
     # Emotion labels from your BERT model
-    """
+    
     emotion_labels = [
         "Admiration", "Amusement", "Anger", "Annoyance", "Approval", "Caring", "Confusion",
         "Curiosity", "Desire", "Disappointment", "Disapproval", "Disgust", "Embarrassment",
@@ -447,11 +447,5 @@ if __name__ == "__main__":
     raw_accuracy = correct_raw / total if total else 0.0
     norm_accuracy = correct_norm / total if total else 0.0
 
-    print(f"Intent Classification Accuracy: {norm_accuracy:.2%} ({correct_norm}/{total})")
+    print(f"Mapped Intent Classification Accuracy: {norm_accuracy:.2%} ({correct_norm}/{total})")
     print(f"Total examples evaluated: {total}")
-    # Compute accuracy
-    accuracy = correct / total
-    print(f"\nLayer 1 Emotion Classification Accuracy (remapped, top-3 in true set): "
-        f"{accuracy:.2%} ({correct}/{total} correct)")
-
-    """
