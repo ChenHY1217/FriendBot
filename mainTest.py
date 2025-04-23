@@ -107,6 +107,83 @@ def generateResponse(input, emotions, intent, conversation_history, client):
         # Fallback if response isn't valid JSON
         return "Error: Unable to parse response."
 
+
+# Improved extractIntent with strict JSON schema enforcement
+def extract_intent(input_text, conversation_history, client):
+    schema = {
+        "relationship_content": "boolean",
+        "intent_category": {
+            "intent": "one of the eight labels",
+            "confidence": "float"
+        }
+    }
+    options = [
+        "Seeking advice/guidance",
+        "Venting/expressing emotions",
+        "Information seeking",
+        "Crisis communication",
+        "Reflection on past experiences",
+        "Future planning/relationship goals",
+        "Conflict resolution",
+        "Communication improvement"
+    ]
+    system_prompt = (
+        "You are an assistant that categorizes user relationship questions. "
+        "Respond with JSON exactly matching this schema: \n" +
+        json.dumps(schema, indent=2) +
+        "\nWhere 'intent' must be one of: " + ", ".join(options) +
+        "\nDo not include any additional keys or text."
+    )
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": input_text}
+        ],
+    )
+    text = completion.choices[0].message.content
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        return {"error": text}
+
+# Helper to extract primary intent string from model response
+def extract_primary_intent(pred_obj):
+    if not isinstance(pred_obj, dict) or "error" in pred_obj:
+        return None
+    if not pred_obj.get("relationship_content", True):
+        return "Information seeking"
+    ic = pred_obj.get("intent_category", {})
+    intent = ic.get("intent")
+    if isinstance(intent, list) and intent:
+        intent = intent[0]
+    if isinstance(intent, str):
+        return intent.strip()
+    return None
+
+# Wrapper for normalized intent with fallback
+def get_normalized_intent(question, client):
+    raw = extract_intent(question, [], client)
+    primary = extract_primary_intent(raw)
+    intent_map = {
+        "seeking advice/guidance": "Seeking advice/guidance",
+        "venting/expressing emotions": "Venting/expressing emotions",
+        "information seeking": "Information seeking",
+        "crisis communication": "Crisis communication",
+        "reflection on past experiences": "Reflection on past experiences",
+        "future planning/relationship goals": "Future planning/relationship goals",
+        "conflict resolution": "Conflict resolution",
+        "communication improvement": "Communication improvement"
+    }
+    if primary and primary.lower() in intent_map:
+        return intent_map[primary.lower()]
+    # Urgent fallback
+    if isinstance(raw, dict):
+        emo = raw.get("emotional_undertones", {}).get("emotion", "").lower()
+        if any(term in emo for term in ("worry", "anxiety", "grief")):
+            return "Crisis communication"
+    return "Seeking advice/guidance"
+
 if __name__ == "__main__":
 
     load_dotenv()  # Load environment variables from .env file
@@ -263,10 +340,8 @@ if __name__ == "__main__":
     print("Model Response: ", modelResponse) # TESTING PURPOSES ONLY
 
     ################################################################################
-<<<<<<< HEAD
     # testing the performance of the intent layer
     ################################################################################
-=======
     # Evaluate the emotional intelligence of responses
     ################################################################################
     from evaluation import evaluate_emotional_intelligence
@@ -281,86 +356,94 @@ if __name__ == "__main__":
     print("Base Response (Base) Total Score:", evaluation["base_response"]["total"])
     print("Winner:", evaluation["winner"])
 
->>>>>>> f9a929de84333b36e326f911b127b1acecf24edc
 
-    # Emotion labels from your BERT model
+        # Load model
+    model_name = "bhadresh-savani/bert-base-go-emotion"
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForSequenceClassification.from_pretrained(model_name)
+
+    # Define labels and mapping
     emotion_labels = [
         "Admiration", "Amusement", "Anger", "Annoyance", "Approval", "Caring", "Confusion",
         "Curiosity", "Desire", "Disappointment", "Disapproval", "Disgust", "Embarrassment",
         "Excitement", "Fear", "Gratitude", "Grief", "Joy", "Love", "Nervousness", "Optimism",
         "Pride", "Realization", "Relief", "Remorse", "Sadness", "Surprise", "Neutral"
     ]
-
-    # Remapping: model_label → simplified label (based on dataset clusters)
     emotion_map = {
-        "Admiration": "Joy",
-        "Amusement": "Joy",
-        "Anger": "Anger",
-        "Annoyance": "Anger",
-        "Approval": "Trust",
-        "Caring": "Trust",
-        "Confusion": "Fear",
-        "Curiosity": "Anticipation",
-        "Desire": "Anticipation",
-        "Disappointment": "Sadness",
-        "Disapproval": "Anger",
-        "Disgust": "Disgust",
-        "Embarrassment": "Shame",
-        "Excitement": "Joy",
-        "Fear": "Fear",
-        "Gratitude": "Trust",
-        "Grief": "Sadness",
-        "Joy": "Joy",
-        "Love": "Joy",
-        "Nervousness": "Fear",
-        "Optimism": "Anticipation",
-        "Pride": "Joy",
-        "Realization": "Surprise",
-        "Relief": "Joy",
-        "Remorse": "Sadness",
-        "Sadness": "Sadness",
-        "Surprise": "Surprise",
+        "Admiration": "Joy", "Amusement": "Joy", "Anger": "Anger", "Annoyance": "Anger",
+        "Approval": "Trust", "Caring": "Trust", "Confusion": "Fear", "Curiosity": "Anticipation",
+        "Desire": "Anticipation", "Disappointment": "Sadness", "Disapproval": "Anger",
+        "Disgust": "Disgust", "Embarrassment": "Shame", "Excitement": "Joy", "Fear": "Fear",
+        "Gratitude": "Trust", "Grief": "Sadness", "Joy": "Joy", "Love": "Joy",
+        "Nervousness": "Fear", "Optimism": "Anticipation", "Pride": "Joy", "Realization": "Surprise",
+        "Relief": "Joy", "Remorse": "Sadness", "Sadness": "Sadness", "Surprise": "Surprise",
         "Neutral": "Neutral"
     }
 
-    # Debug CWD and file visibility
-    print("CWD:", os.getcwd())
-    print("FILES:", os.listdir())
-
-    # Load dataset
     df = pd.read_csv("data/dating_emotion_dataset.csv", encoding="latin-1")
-
-    correct = 0
-    total = 0
+    full_correct = half_correct = wrong = total = 0
 
     for _, row in df.iterrows():
         text = row["Question"]
-        true_emotions_raw = [e.strip() for e in row["Emotions"].split(",")]
+        raw = [e.strip() for e in row["Emotions"].split(",")]
+        true_emotions = [e.split("(")[0].strip() for e in raw]
 
-        # Map true emotions into simplified labels
-        true_emotions = []
-        for emo in true_emotions_raw:
-            if "(" in emo:  # e.g., "Sadness (worry)"
-                emo = emo.split("(")[0].strip()
-            true_emotions.append(emo)
-
-        # Tokenize and run through model
-        inputs = tokenizer(text, return_tensors="pt")
+        # Model inference
+        inputs = tokenizer(text, return_tensors="pt", truncation=True, padding=True)
         with torch.no_grad():
-            outputs = model(**inputs)
-            probs = torch.sigmoid(outputs.logits).squeeze(0)
+            logits = model(**inputs).logits.squeeze()
+            probs = torch.sigmoid(logits)
 
-        # Get top-3 predictions and map them
-        top3_indices = torch.argsort(probs, descending=True)[:3]
-        top3_raw = [emotion_labels[i] for i in top3_indices]
-        top3_remapped = [emotion_map[emo] for emo in top3_raw]
+        # Top-3 predictions
+        top3 = torch.argsort(probs, descending=True)[:3]
+        preds = [emotion_map[emotion_labels[i]] for i in top3]
 
-        # Check if any mapped prediction is in the mapped true set
-        if any(pred in true_emotions for pred in top3_remapped):
-            correct += 1
+        # Count matches
+        matches = sum(1 for p in preds if p in true_emotions)
+
+        if matches >= len(true_emotions):
+            full_correct += 1
+        elif matches > 0:
+            half_correct += 1
+        else:
+            wrong += 1
         total += 1
 
-    # Compute accuracy
-    accuracy = correct / total
-    print(f"\nLayer 1 Emotion Classification Accuracy (remapped, top-3 in true set): "
-        f"{accuracy:.2%} ({correct}/{total} correct)")
+    # Report
+    print(f"Emotion Evaluation (Layer 1):")
+    print(f"  Full correct (all true emotions in top-3): {full_correct}/{total}")
+    print(f"  Half correct (one true emotion in top-3): {half_correct}/{total}")
+    print(f"  Wrong (no true emotions in top-3): {wrong}/{total}\n")
+
+
+
+    #intent
+    load_dotenv()
+    client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+    df_intent = pd.read_csv("data/dating_intent_dataset.csv", encoding="latin-1")
+
+    correct_raw, correct_norm, total = 0, 0, 0
+
+    for _, row in df_intent.iterrows():
+        question = row["Question"]
+        true_intent = row["Intent"].strip()
+
+        # Original prediction
+        raw_obj = extractIntent(question, [], client)
+        raw_intent = extract_primary_intent(raw_obj) or ""
+        if raw_intent.lower() == true_intent.lower():
+            correct_raw += 1
+
+        # Our normalized prediction
+        norm_intent = get_normalized_intent(question, client)
+        if norm_intent.lower() == true_intent.lower():
+            correct_norm += 1
+
+        total += 1
+
+    raw_accuracy = correct_raw / total if total else 0.0
+    norm_accuracy = correct_norm / total if total else 0.0
+
+    print(f"Intent Classification Accuracy: {norm_accuracy:.2%} ({correct_norm}/{total})")
+    print(f"Total examples evaluated: {total}")
