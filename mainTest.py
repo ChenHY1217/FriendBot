@@ -262,11 +262,7 @@ if __name__ == "__main__":
     modelResponse = response
     print("Model Response: ", modelResponse) # TESTING PURPOSES ONLY
 
-    ################################################################################
-<<<<<<< HEAD
-    # testing the performance of the intent layer
-    ################################################################################
-=======
+    ##################################################################################
     # Evaluate the emotional intelligence of responses
     ################################################################################
     from evaluation import evaluate_emotional_intelligence
@@ -281,8 +277,9 @@ if __name__ == "__main__":
     print("Base Response (Base) Total Score:", evaluation["base_response"]["total"])
     print("Winner:", evaluation["winner"])
 
->>>>>>> f9a929de84333b36e326f911b127b1acecf24edc
-
+    ################################################################################
+    # testing the performance of the intent layer
+    ################################################################################
     # Emotion labels from your BERT model
     emotion_labels = [
         "Admiration", "Amusement", "Anger", "Annoyance", "Approval", "Caring", "Confusion",
