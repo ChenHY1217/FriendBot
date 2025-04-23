@@ -1,3 +1,5 @@
+Check out github https://github.com/ChenHY1217/FriendBot
+
 Before running:
 
 run in terminal to install dependencies: pip install python-dotenv openai torch transformers pandas scikit-learn
